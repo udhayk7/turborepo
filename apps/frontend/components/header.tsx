@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Search, Bell, HelpCircle, Plus } from 'lucide-react';
+import { useAuth0 } from '@auth0/auth0-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -9,6 +10,7 @@ type HeaderProps = {
 };
 
 export function Header({ className }: HeaderProps) {
+  const { logout } = useAuth0();
   return (
     <header className={cn("flex items-center justify-between p-3 bg-white border-b border-gray-200 shadow-sm", className)}>
       <div className="flex items-center gap-3">
@@ -45,7 +47,7 @@ export function Header({ className }: HeaderProps) {
           </button>
           <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
         </div>
-        <button className="bg-gray-100 p-0.5 rounded-full hover:bg-gray-200 transition-colors">
+        <button className="bg-gray-100 p-0.5 rounded-full hover:bg-gray-200 transition-colors" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-white font-medium text-sm">
             U
           </div>

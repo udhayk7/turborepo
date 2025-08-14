@@ -1,6 +1,7 @@
 import './globals.css';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
+import Providers from './providers';
 
 export const metadata = {
   title: 'OpusPro | AI-Powered Video Editor',
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
-        <main className="min-h-screen font-sans">
-          {children}
-        </main>
+        <Providers>
+          <main className="min-h-screen font-sans">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

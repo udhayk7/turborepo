@@ -1,8 +1,11 @@
+"use client";
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Video } from 'lucide-react';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export default function LoginPage() {
+  const { loginWithRedirect } = useAuth0();
   return (
     <div className="min-h-screen flex flex-col">
       <div className="bg-white py-6 px-4 border-b border-gray-200">
@@ -73,11 +76,9 @@ export default function LoginPage() {
               </label>
             </div>
             
-            <Link href="/api/auth/login">
-              <Button variant="default" className="w-full">
-                Continue with Auth0
-              </Button>
-            </Link>
+            <Button variant="default" className="w-full" onClick={() => loginWithRedirect({ appState: { returnTo: '/dashboard' } })}>
+              Continue with Auth0
+            </Button>
           </form>
           
           <div className="mt-6">

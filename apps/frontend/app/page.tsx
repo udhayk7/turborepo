@@ -1,8 +1,10 @@
 import Link from 'next/link';
+import { useAuth0 } from '@auth0/auth0-react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Video, Brain, Zap, Edit } from 'lucide-react';
 
 export default function LandingPage() {
+  // Note: this is a Server Component; we'll keep links to /dashboard and rely on AuthGuard
   return (
     <div className="flex flex-col min-h-screen">
       <header className="border-b border-gray-200 bg-white">
