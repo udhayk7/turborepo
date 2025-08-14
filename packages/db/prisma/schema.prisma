@@ -1,105 +1,409 @@
-// schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// Enums for video processing status
+enum VideoStatus {
+  UPLOADING
+  UPLOADED
+  PROCESSING
+  PROCESSED
+  FAILED
+  DELETED
+}
+
+enum ClipStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+}
+
+enum TranscriptionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum VideoVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum VideoAspectRatio {
+  NINE_SIXTEEN
+  SIXTEEN_NINE
+  ONE_ONE
+  FOUR_THREE
+  THREE_FOUR
+}
+
+enum VideoQuality {
+  SD
+  HD
+  FHD
+  UHD
+}
+
+enum ProcessingPriority {
+  LOW
+  NORMAL
+  HIGH
+}
+
+// =================================
+// MODELS
+// =================================
+
 model User {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  clerkId    String   @unique
-  email      String   @unique
-  name       String
-  profilePic String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String          @id @default(uuid())
+  clerkId         String          @unique
+  email           String          @unique
+  name            String?
+  profilePicture  String?
+  storageUsed     BigInt          @default(0) // in bytes
+  monthlyQuota    BigInt          @default(10737418240) // 10GB default
+  videoQuota      Int             @default(10) // Number of videos per month
+  isPro           Boolean         @default(false)
+  lastResetAt     DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  subscriptions Subscription[]
-  transactions  Transaction[]
-  videos        Video[]
-  projects      Project[]
-  clips         Clip[]
-}
+  // Relations
+  videos          Video[]
+  clips           Clip[]
+  apiKeys         ApiKey[]
+  models          Model[]
+  outputImages    OutputImages[]
+  transactions    Transaction[]
+  userCredit      UserCredit?
+  subscriptions   Subscription[]
 
-model Subscription {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  plan           String
-  paymentMethod  String
-  orderId        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  user           User     @relation(fields: [userId], references: [id])
-}
-
-model Transaction {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @db.ObjectId
-  amount     Float
-  currency   String
-  paymentId  String
-  orderId    String?
-  plan       String
-  status     String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  user       User     @relation(fields: [userId], references: [id])
+  @@index([email])
+  @@index([clerkId])
 }
 
 model Video {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
-  filename    String
-  title       String
-  description String?
-  storage     String
-  thumbnail   String?
-  status      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String            @id @default(uuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  title             String
+  description       String?
+  originalUrl       String            // S3 URL of the original video
+  processedUrl      String?           // URL of processed video (if needed)
+  thumbnailUrl      String?           // URL of video thumbnail
+  duration          Int?              // Duration in seconds
+  size              BigInt            // File size in bytes
+  status            VideoStatus       @default(UPLOADING)
+  visibility        VideoVisibility   @default(PRIVATE)
+  aspectRatio       VideoAspectRatio?
+  quality           VideoQuality?
+  metadata          Json?             // Additional video metadata
+  isPublic          Boolean           @default(false)
+  processingJobId   String?           // ID of the background processing job
+  error             String?           // Error message if processing failed
+  width             Int?
+  height            Int?
+  frameRate         Float?
+  bitrate           Int?              // in kbps
+  codec             String?
+  format            String?           // mp4, mov, etc.
+  deletedAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id])
-}
+  // Relations
+  clips             Clip[]
+  transcriptions    Transcription[]
+  videoTags         VideoTag[]
 
-model Project {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String   @db.ObjectId
-  sourceType   String
-  sourceUrl    String
-  storageBytes Int
-  durationMs   Int
-  title        String
-  status       String
-  createdAt    DateTime @default(now())
-
-  user         User     @relation(fields: [userId], references: [id])
-  clips        Clip[]
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Clip {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  duration     Float
-  curationId   String?
-  projectId    String   @db.ObjectId
-  originalId   String?
-  userId       String   @db.ObjectId
-  previewUri   String
-  exportUri    String
-  durationMs   Int
-  startMs      Int
-  endMs        Int
-  title        String
-  description  String?
-  hashtags     String[]
-  viralityScore Float
-  renderPrefId String?
-  createdAt    DateTime @default(now())
+  id                String          @id @default(uuid())
+  videoId           String
+  video             Video           @relation(fields: [videoId], references: [id])
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  title             String
+  description       String?
+  startTime         Float           // Start time in seconds
+  endTime           Float           // End time in seconds
+  duration          Float           // Duration in seconds (endTime - startTime)
+  status            ClipStatus      @default(PENDING)
+  clipUrl           String?         // S3 URL of the generated clip
+  thumbnailUrl      String?         // URL of clip thumbnail
+  isPublic          Boolean         @default(false)
+  processingJobId   String?         // ID of the background processing job
+  error             String?         // Error message if processing failed
+  deletedAt         DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
-  user         User     @relation(fields: [userId], references: [id])
-  project      Project  @relation(fields: [projectId], references: [id])
+  // Relations
+  transcription     Transcription?  @relation(fields: [transcriptionId], references: [id])
+  transcriptionId   String?
+  clipTags          ClipTag[]
+
+  @@index([videoId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Transcription {
+  id                String              @id @default(uuid())
+  videoId           String
+  video             Video               @relation(fields: [videoId], references: [id])
+  clip              Clip?               @relation(fields: [clipId], references: [id])
+  clipId            String?
+  userId            String
+  user              User                @relation(fields: [userId], references: [id])
+  status            TranscriptionStatus @default(PENDING)
+  language          String              @default("en")
+  text              String?             // Full transcription text
+  segments          Json?               // Timestamped segments
+  confidence        Float?              // Overall confidence score
+  model             String?             // Model used for transcription
+  processingTime    Int?                // Processing time in ms
+  error             String?             // Error message if failed
+  metadata          Json?               // Additional metadata
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([videoId])
+  @@index([clipId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  videoTags VideoTag[]
+  clipTags  ClipTag[]
+}
+
+model VideoTag {
+  video   Video  @relation(fields: [videoId], references: [id])
+  videoId String
+  tag     Tag    @relation(fields: [tagId], references: [id])
+  tagId   String
+
+  @@id([videoId, tagId])
+}
+
+model ClipTag {
+  clip   Clip   @relation(fields: [clipId], references: [id])
+  clipId String
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  String
+
+  @@id([clipId, tagId])
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  name        String
+  key         String    @unique
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+  permissions Json?     // Array of permissions
+  metadata    Json?     // Additional metadata
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model ProcessingJob {
+  id              String    @id @default(uuid())
+  type            String    // 'video', 'clip', 'transcription', etc.
+  status          String    // 'pending', 'processing', 'completed', 'failed'
+  resourceType    String    // 'video', 'clip', etc.
+  resourceId      String    // ID of the resource being processed
+  priority        ProcessingPriority @default(NORMAL)
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(3)
+  error           String?
+  result          Json?     // Processing result
+  startedAt       DateTime?
+  completedAt     DateTime?
+  scheduledAt     DateTime  @default(now())
+  metadata        Json?     // Additional job metadata
+  workerId        String?   // ID of the worker processing the job
+  parentJobId     String?   // For dependent jobs
+  retryAfter      DateTime? // When to retry if failed
+  
+  @@index([status])
+  @@index([resourceType, resourceId])
+  @@index([scheduledAt])
+  @@index([workerId])
+  @@index([parentJobId])
+}
+
+// =================================
+// EXISTING MODELS (from original schema)
+// =================================
+
+enum ModelTrainingStatusEnum {
+  Pending
+  Generated
+  Failed
+}
+
+model Model {
+  id              String      @id @default(uuid())
+  name            String
+  type            ModelTypeEnum
+  age             Int
+  ethinicity      EthenecityEnum  
+  eyeColor        EyeColorEnum
+  bald            Boolean
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  triggerWord     String?
+  tensorPath      String?
+  thumbnail       String?
+  trainingStatus  ModelTrainingStatusEnum @default(Pending)
+  outputImages    OutputImages[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  falAiRequestId  String?
+  zipUrl          String
+  open            Boolean    @default(false)
+  
+  @@index([falAiRequestId])
+}
+
+enum OutputImageStatusEnum {
+  Pending
+  Generated
+  Failed
+}
+
+model OutputImages {
+  id              String  @id @default(uuid())
+  imageUrl        String  @default("")
+  modelId         String
+  model           Model   @relation(fields: [modelId], references: [id])
+  userId          String
+  user            User    @relation(fields: [userId], references: [id])
+  prompt          String
+  falAiRequestId  String?
+  status          OutputImageStatusEnum @default(Pending)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([falAiRequestId])
+}
+
+model Packs {
+  id          String        @id @default(uuid())
+  name        String
+  description String        @default("")
+  imageUrl1   String        @default("")
+  imageUrl2   String        @default("")
+  prompts     PackPrompts[]
+}
+
+model PackPrompts {
+  id        String    @id @default(uuid())
+  prompt    String
+  packId    String
+  pack      Packs    @relation(fields: [packId], references: [id])
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  plan      PlanType
+  paymentId String
+  orderId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PlanType {
+  basic
+  premium
+}
+
+enum ModelTypeEnum {
+  Man
+  Woman
+  Others
+}
+
+enum EthenecityEnum {
+  White
+  Black
+  Asian_American    @map("Asian American")
+  East_Asian        @map("East Asian")
+  South_East_Asian  @map("South East Asian")
+  South_Asian       @map("South Asian")
+  Middle_Eastern    @map("Middle Eastern")
+  Pacific
+  Hispanic
+}
+
+enum EyeColorEnum {
+  Brown
+  Blue
+  Hazel
+  Gray
+}
+
+model UserCredit {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Transaction {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  amount      Int
+  currency    String
+  paymentId   String
+  orderId     String
+  plan        PlanType
+  status      TransactionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([userId])
 }

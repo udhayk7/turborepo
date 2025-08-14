@@ -83,20 +83,18 @@ const inviteSchema = z.object({
 /* -------------------- ENDPOINTS -------------------- */
 
 // 1. Project & Media Management
-router.post("/projects", async (req, res) => {
+router.post("/videos", async (req, res) => {
     const parsed = createProjectSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error);
   
     try {
-      const project = await prisma.project.create({
+      const project = await prisma.video.create({
         data: {
           userId: parsed.data.userId,
           title: parsed.data.title,
-          sourceType: parsed.data.targetPlatform,
-          sourceUrl: "",
-          storageBytes: 0,
-          durationMs: 0,
-          status: "draft",
+          originalUrl: "",
+          size: 0n,
+          status: "UPLOADING",
         },
       });
       res.json({ status: "ok", project });
@@ -106,19 +104,19 @@ router.post("/projects", async (req, res) => {
     }
   });
   
-  router.get("/projects", async (req, res) => {
+router.get("/videos", async (req, res) => {
     try {
-      const projects = await prisma.project.findMany();
+      const projects = await prisma.video.findMany();
       res.json({ status: "ok", projects });
     } catch (err) {
       res.status(500).json({ status: "error", message: "DB error" });
     }
   });
   
-  router.get("/projects/:projectId", async (req, res) => {
+router.get("/videos/:videoId", async (req, res) => {
     try {
-      const project = await prisma.project.findUnique({
-        where: { id: req.params.projectId },
+      const project = await prisma.video.findUnique({
+        where: { id: req.params.videoId },
       });
       if (!project) return res.status(404).json({ status: "error", message: "Not found" });
       res.json({ status: "ok", project });
@@ -127,13 +125,13 @@ router.post("/projects", async (req, res) => {
     }
   });
   
-  router.put("/projects/:projectId", async (req, res) => {
+router.put("/videos/:videoId", async (req, res) => {
     const parsed = updateProjectSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json(parsed.error);
   
     try {
-      const updated = await prisma.project.update({
-        where: { id: req.params.projectId },
+      const updated = await prisma.video.update({
+        where: { id: req.params.videoId },
         data: parsed.data,
       });
       res.json({ status: "ok", project: updated });
@@ -142,9 +140,9 @@ router.post("/projects", async (req, res) => {
     }
   });
   
-  router.delete("/projects/:projectId", async (req, res) => {
+router.delete("/videos/:videoId", async (req, res) => {
     try {
-      await prisma.project.delete({ where: { id: req.params.projectId } });
+      await prisma.video.delete({ where: { id: req.params.videoId } });
       res.json({ status: "ok", message: "Project deleted" });
     } catch (err) {
       res.status(500).json({ status: "error", message: "DB error" });
