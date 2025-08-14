@@ -1,5 +1,8 @@
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
+import dynamic from 'next/dynamic';
+
+const AuthGuard = dynamic(() => import('@/components/auth-guard'), { ssr: false });
 
 export default function DashboardLayout({
   children,
@@ -13,7 +16,9 @@ export default function DashboardLayout({
         <Header />
         <main className="flex-1 overflow-auto p-6 bg-[#F8F9FB]">
           <div className="container max-w-7xl mx-auto">
-            {children}
+            <AuthGuard>
+              {children}
+            </AuthGuard>
           </div>
         </main>
       </div>
