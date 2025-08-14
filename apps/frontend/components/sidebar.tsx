@@ -58,7 +58,7 @@ const bottomNavItems: NavItem[] = [
   },
   {
     title: 'Log Out',
-    href: '/api/auth/logout',
+    href: '/login',
     icon: LogOut,
   },
 ];
