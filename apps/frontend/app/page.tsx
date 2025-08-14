@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-const AuthButtons = dynamic(() => import('@/components/auth-buttons'), { ssr: false });
+import AuthButtons from '@/components/auth-buttons';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Video, Brain, Zap, Edit } from 'lucide-react';
 
