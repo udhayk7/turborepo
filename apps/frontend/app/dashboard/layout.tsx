@@ -1,8 +1,6 @@
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
-import dynamic from 'next/dynamic';
-
-const AuthGuard = dynamic(() => import('@/components/auth-guard'), { ssr: false });
+import AuthGuard from '@/components/auth-guard';
 
 export default function DashboardLayout({
   children,
