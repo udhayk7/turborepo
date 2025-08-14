@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+const AuthButtons = dynamic(() => import('@/components/auth-buttons'), { ssr: false });
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Video, Brain, Zap, Edit } from 'lucide-react';
 
@@ -16,14 +18,7 @@ export default function LandingPage() {
             <Link href="#pricing" className="text-sm text-gray-700 hover:text-primary-600">Pricing</Link>
             <Link href="#testimonials" className="text-sm text-gray-700 hover:text-primary-600">Testimonials</Link>
           </nav>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-gray-700 hover:text-primary-600 font-medium">Log in</Link>
-            <Link href="/dashboard">
-              <Button variant="default" size="sm">
-                Start for free
-              </Button>
-            </Link>
-          </div>
+          <AuthButtons />
         </div>
       </header>
 

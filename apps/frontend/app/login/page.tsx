@@ -5,7 +5,7 @@ import { Video } from 'lucide-react';
 import { useAuth0 } from '@auth0/auth0-react';
 
 export default function LoginPage() {
-  const { loginWithRedirect } = useAuth0();
+  const { loginWithRedirect, isAuthenticated, logout } = useAuth0();
   return (
     <div className="min-h-screen flex flex-col">
       <div className="bg-white py-6 px-4 border-b border-gray-200">
@@ -34,6 +34,16 @@ export default function LoginPage() {
             <p className="text-gray-600 mt-2">Sign in to your OpusPro account</p>
           </div>
           
+          {isAuthenticated ? (
+            <div className="space-y-4">
+              <Link href="/dashboard">
+                <Button variant="default" className="w-full">Go to dashboard</Button>
+              </Link>
+              <Button variant="outline" className="w-full" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
+                Log out
+              </Button>
+            </div>
+          ) : (
           <form className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -80,6 +90,7 @@ export default function LoginPage() {
               Continue with Auth0
             </Button>
           </form>
+          )}
           
           <div className="mt-6">
             <div className="relative">
