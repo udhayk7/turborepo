@@ -73,9 +73,9 @@ export default function LoginPage() {
               </label>
             </div>
             
-            <Link href="/dashboard">
+            <Link href="/api/auth/login">
               <Button variant="default" className="w-full">
-                Sign in
+                Continue with Auth0
               </Button>
             </Link>
           </form>

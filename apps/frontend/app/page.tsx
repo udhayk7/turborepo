@@ -17,7 +17,7 @@ export default function LandingPage() {
             <Link href="#testimonials" className="text-sm text-gray-700 hover:text-primary-600">Testimonials</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-gray-700 hover:text-primary-600 font-medium">Log in</Link>
+            <Link href="/api/auth/login" className="text-sm text-gray-700 hover:text-primary-600 font-medium">Log in</Link>
             <Link href="/dashboard">
               <Button variant="default" size="sm">
                 Start for free
