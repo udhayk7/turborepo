@@ -1,7 +1,6 @@
 import './globals.css';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import { UserProvider } from '@auth0/nextjs-auth0/client';
 
 export const metadata = {
   title: 'OpusPro | AI-Powered Video Editor',
@@ -16,11 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
-        <UserProvider>
-          <main className="min-h-screen font-sans">
-            {children}
-          </main>
-        </UserProvider>
+        <main className="min-h-screen font-sans">
+          {children}
+        </main>
       </body>
     </html>
   );
