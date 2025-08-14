@@ -28,7 +28,7 @@ export default function AuthButtons() {
 
   return (
     <div className="flex items-center gap-4">
-      <Link href="/login" className="text-sm text-gray-700 hover:text-primary-600 font-medium">Log in</Link>
+      <button className="text-sm text-gray-700 hover:text-primary-600 font-medium" onClick={() => loginWithRedirect({ appState: { returnTo: '/dashboard' } })}>Log in</button>
       <Link href="/dashboard">
         <Button variant="default" size="sm">Start for free</Button>
       </Link>

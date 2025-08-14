@@ -1,6 +1,8 @@
+"use client";
 import React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useAuth0 } from '@auth0/auth0-react';
 import { 
   Home, 
   VideoIcon, 
@@ -64,6 +66,7 @@ const bottomNavItems: NavItem[] = [
 ];
 
 export function Sidebar({ className }: SidebarProps) {
+  const { isAuthenticated, logout, loginWithRedirect } = useAuth0();
   return (
     <aside
       className={cn(
@@ -91,17 +94,31 @@ export function Sidebar({ className }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="pt-4 mt-auto border-t border-gray-700">
-        {bottomNavItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white group mt-1 transition-colors"
+      <div className="pt-4 mt-auto border-t border-gray-700 space-y-1">
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white group mt-1 transition-colors"
+        >
+          <Settings className="h-5 w-5 text-gray-400 group-hover:text-primary-400" />
+          Settings
+        </Link>
+        {isAuthenticated ? (
+          <button
+            className="w-full text-left flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white group mt-1 transition-colors"
+            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
           >
-            <item.icon className="h-5 w-5 text-gray-400 group-hover:text-primary-400" />
-            {item.title}
-          </Link>
-        ))}
+            <LogOut className="h-5 w-5 text-gray-400 group-hover:text-primary-400" />
+            Log Out
+          </button>
+        ) : (
+          <button
+            className="w-full text-left flex items-center gap-3 rounded-md px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-800 hover:text-white group mt-1 transition-colors"
+            onClick={() => loginWithRedirect({ appState: { returnTo: '/dashboard' } })}
+          >
+            <LogOut className="h-5 w-5 text-gray-400 group-hover:text-primary-400" />
+            Log In
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-3 mt-6 px-3 py-3 rounded-md bg-gray-800">
